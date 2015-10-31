@@ -9,6 +9,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ListView;
 
 import java.util.ArrayList;
@@ -31,7 +32,6 @@ public class DeviceListFragment extends Fragment {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()){
             case R.id.action_refresh:
-                mListener.next();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -52,7 +52,12 @@ public class DeviceListFragment extends Fragment {
         DeviceListAdapter adapter = new DeviceListAdapter(getActivity());
         adapter.setDeviceListItems(list);
         listView.setAdapter(adapter);
-
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener(){
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                mListener.next();
+            }
+        });
 
         DeviceListItem item = new DeviceListItem();
         item.setName("DropLetter");
