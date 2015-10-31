@@ -14,9 +14,11 @@ import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,49 +35,46 @@ public class BLEService extends Service{
     private Handler mHandler = new Handler();
     private BluetoothGatt bluetoothGatt;
     private List<BluetoothGattService> serviceList = new ArrayList<>();
+    private Boolean isScanning;
+
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        init();
+    }
+
+    private void init() {
+        //Check the device supports BLE
+        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
+            Toast.makeText(getApplicationContext(), "Your device does not supports Bluetooth Low Energy", Toast.LENGTH_LONG).show();
+            stopSelf();
+        }
+
+        bluetoothManager = (BluetoothManager) this.getSystemService(Context.BLUETOOTH_SERVICE);
+        if(bluetoothManager == null){
+            Toast.makeText(getApplicationContext(), "Unable to initialize BluetoothManager.", Toast.LENGTH_LONG).show();
+            stopSelf();
+        }
+        mBluetoothAdapter = bluetoothManager.getAdapter();
+        if (mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()) {
+            Toast.makeText(getApplicationContext(), "Unable to initialize BluetoothAdapter.", Toast.LENGTH_LONG).show();
+            stopSelf();
+        }
+        mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
+        if (mBluetoothLeScanner == null) {
+            Toast.makeText(getApplicationContext(), "Unable to initialize BluetoothLeScanner.", Toast.LENGTH_LONG).show();
+            stopSelf();
+        }
+    }
 
     @Override
     public IBinder onBind(Intent intent) {
         return null;
     }
 
-    private void init() {
-        bluetoothManager = (BluetoothManager) this.getSystemService(Context.BLUETOOTH_SERVICE);
-        if(bluetoothManager == null){
-            Log.e(TAG, "Unable to initialize BluetoothManager.");
-        }
-        mBluetoothAdapter = bluetoothManager.getAdapter();
-        if (mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()) {
-            Log.e(TAG, "Unable to initialize BluetoothAdapter.");
-        }
-        mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
-    }
-
-    private void scan() {
-
-
-    }
-
-    public boolean write(String str){
-        BluetoothGattService bluetoothGattService = bluetoothGatt.getService(GATTProfiles.SERVICE);
-        if(bluetoothGattService == null){
-            Log.e(TAG, "Can't get a BluetoothGattService");
-            return false;
-        }
-        BluetoothGattCharacteristic characteristic = bluetoothGattService.getCharacteristic(GATTProfiles.TX);
-        if(characteristic == null){
-            Log.e(TAG, "Can't get a BluetoothGattCharacteristic");
-            return false;
-        }
-        characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
-        characteristic.setValue(str);
-        bluetoothGatt.writeCharacteristic(characteristic);
-        return true;
-    }
-
-    // ScanCallbackの初期化
-    private ScanCallback initCallbacks() {
-        return new ScanCallback() {
+    public void startScan() {
+        mScanCallback = new ScanCallback() {
             @Override
             public void onScanResult(int callbackType, ScanResult result) {
                 super.onScanResult(callbackType, result);
@@ -99,6 +98,19 @@ public class BLEService extends Service{
                 super.onScanFailed(errorCode);
             }
         };
+
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                isScanning = false;
+                mBluetoothLeScanner.stopScan(mScanCallback);
+            }
+        }, SCAN_PERIOD);
+
+        isScanning = true;
+        mBluetoothLeScanner.startScan(mScanCallback);
+        //TODO:we can use scanFilter
+        // mBluetoothLeScanner.startScan(filters, settings, mScanCallback);
     }
 
     // スキャン停止
@@ -109,19 +121,21 @@ public class BLEService extends Service{
     }
 
     // スキャンしたデバイスのリスト保存
-    public void saveDevice(BluetoothDevice device) {
-        if (deviceList == null) {
-            deviceList = new ArrayList<>();
-        }
+    private void saveDevice(BluetoothDevice device) {
         deviceList.add(device);
     }
 
-    public boolean isAdded(BluetoothDevice device) {
+    private boolean isAdded(BluetoothDevice device) {
         if (deviceList != null && deviceList.size() > 0) {
             return deviceList.contains(device);
         } else {
             return false;
         }
+    }
+
+    public void connect(Context context, BluetoothDevice device) {
+        bluetoothGatt = device.connectGatt(context, false, mGattCallback);
+        bluetoothGatt.connect();
     }
 
     private BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
@@ -132,6 +146,8 @@ public class BLEService extends Service{
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 bluetoothGatt = gatt;
                 discoverService();
+            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                Log.i(TAG, "Disconnected from GATT server.");
             }
         }
 
@@ -146,10 +162,21 @@ public class BLEService extends Service{
         }
     };
 
-    // Gattへの接続要求
-    public void connect(Context context, BluetoothDevice device) {
-        bluetoothGatt = device.connectGatt(context, false, mGattCallback);
-        bluetoothGatt.connect();
+    public boolean write(String str){
+        BluetoothGattService bluetoothGattService = bluetoothGatt.getService(GATTProfiles.SERVICE);
+        if(bluetoothGattService == null){
+            Log.e(TAG, "Can't get a BluetoothGattService");
+            return false;
+        }
+        BluetoothGattCharacteristic characteristic = bluetoothGattService.getCharacteristic(GATTProfiles.TX);
+        if(characteristic == null){
+            Log.e(TAG, "Can't get a BluetoothGattCharacteristic");
+            return false;
+        }
+        characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+        characteristic.setValue(str);
+        bluetoothGatt.writeCharacteristic(characteristic);
+        return true;
     }
 
     // サービス取得要求

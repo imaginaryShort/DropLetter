@@ -5,6 +5,7 @@ import android.app.FragmentTransaction;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
@@ -12,26 +13,29 @@ import android.view.MenuItem;
 import android.widget.Toast;
 
 public class MainActivity extends Activity implements MainFragment.OnFragmentInteractionListener {
-    private Intent intent = null;
+    private Intent notificationIntent = null;
+    private Intent bleIntent = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //Check the device supports BLE
-        //if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
-        //    Toast.makeText(getApplicationContext(), "Your device does not supports Bluetooth Low Energy", Toast.LENGTH_LONG).show();
-        //    finish();
-        //}
 
         //NotificationServiceの起動
-        //intent = new Intent(this, NotificationService.class);
-        //startService(intent);
+        notificationIntent = new Intent(this, NotificationService.class);
+        startService(notificationIntent);
+        IntentFilter notificationIntentFilter = new IntentFilter();
+        notificationIntentFilter.addAction("NOTIFICATION_ACTION");
+        registerReceiver(notificationReceiver, notificationIntentFilter);
 
-        //IntentFilter intentFilter = new IntentFilter();
-        //intentFilter.addAction("NOTIFICATION_ACTION");
-        //registerReceiver(myReceiver, intentFilter);
+        //BLEServiceの起動
+        bleIntent = new Intent(this, BLEService.class);
+        startService(bleIntent);
+        IntentFilter bleIntentFilter = new IntentFilter();
+        bleIntentFilter.addAction("NOTIFICATION_ACTION");
+        registerReceiver(bleReceiver, bleIntentFilter);
+
 
         if (savedInstanceState == null) {
             MainFragment mainFragment = new MainFragment();
@@ -43,11 +47,21 @@ public class MainActivity extends Activity implements MainFragment.OnFragmentInt
     @Override
     protected void onDestroy() {
         //NotificationServiceの終了
-        stopService(intent);
+        stopService(notificationIntent);
+        stopService(bleIntent);
         super.onDestroy();
     }
 
-    public BroadcastReceiver myReceiver = new BroadcastReceiver() {
+    public BroadcastReceiver notificationReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Bundle bundle = intent.getExtras();
+            String message = bundle.getString("notification");
+            Toast.makeText(context, "onReceive! " + message, Toast.LENGTH_LONG).show();
+        }
+    };
+
+    public BroadcastReceiver bleReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             Bundle bundle = intent.getExtras();
