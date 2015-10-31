@@ -50,4 +50,4 @@ MIT License
 
 ## Author
 
-[y-takeda](https://github.com/y-takeda)
+[yuki-tkd](https://github.com/yuki-tkd)
