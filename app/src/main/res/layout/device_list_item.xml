@@ -1,19 +1,23 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="horizontal"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:padding="10dp" >
 
     <ImageView
         android:id="@+id/image"
-        android:src="@drawable/ic_smartphone_black_48dp"
+        android:src="@drawable/drop_blue_600_600"
         android:layout_width="60dip"
         android:layout_height="60dip"
+        android:layout_marginRight="10dp"
         />
 
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:paddingTop="3dp"
+        android:paddingBottom="3dp">
 
         <TextView
             android:id="@+id/deviceName"
@@ -21,6 +25,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Device Name"
+            android:textSize="20sp"
             />
 
         <TextView

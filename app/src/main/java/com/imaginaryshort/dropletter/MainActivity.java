@@ -65,7 +65,9 @@ public class MainActivity extends Activity implements DeviceListFragment.OnFragm
 
         DeviceListFragment deviceListFragment = new DeviceListFragment();
         FragmentTransaction transaction = getFragmentManager().beginTransaction();
-        transaction.add(R.id.container, deviceListFragment).commit();
+        transaction.add(R.id.container, deviceListFragment);
+        transaction.addToBackStack(null);
+        transaction.commit();
     }
 
     @Override
@@ -110,11 +112,6 @@ public class MainActivity extends Activity implements DeviceListFragment.OnFragm
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
 
         return super.onOptionsItemSelected(item);
     }
