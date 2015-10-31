@@ -26,7 +26,6 @@ import java.util.List;
 
 public class BleService extends Service{
     private final static String TAG = "BLEDevice";
-
     private BluetoothManager bluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothLeScanner mBluetoothLeScanner;
@@ -36,7 +35,7 @@ public class BleService extends Service{
     private BluetoothGatt bluetoothGatt;
     private List<BluetoothGattService> serviceList = new ArrayList<>();
     private Boolean isScanning;
-
+    private IBleServiceCallback iBleServiceCallback;
 
     private IBleService.Stub bleServiceInterface = new IBleService.Stub() {
         @Override
@@ -45,8 +44,32 @@ public class BleService extends Service{
         }
 
         @Override
-        public void scan(IBleServiceCallback callback, long scanPeriodMs) throws RemoteException {
-            startScan(callback, scanPeriodMs);
+        public void setCallbacks(IBleServiceCallback callback) throws RemoteException {
+            iBleServiceCallback = callback;
+        }
+
+        @Override
+        public void removeCallbacks() throws RemoteException {
+            iBleServiceCallback = null;
+        }
+
+        @Override
+        public void scan(long scanPeriodMs) throws RemoteException {
+            startScan(iBleServiceCallback, scanPeriodMs);
+        }
+
+        @Override
+        public void connect(String address) throws RemoteException {
+            for(BluetoothDevice bd : deviceList){
+                if(bd.getAddress().equals(address)) {
+                    connectBle(getApplicationContext(), bd);
+                }
+            }
+        }
+
+        @Override
+        public void write(String str) throws RemoteException {
+            writeTx(str);
         }
     };
 
@@ -79,7 +102,7 @@ public class BleService extends Service{
         }
     }
 
-    public void startScan(final IBleServiceCallback callback, final long scanPeriod) {
+    private void startScan(final IBleServiceCallback callback, final long scanPeriod) {
         mScanCallback = new ScanCallback() {
             @Override
             public void onScanResult(int callbackType, ScanResult result) {
@@ -92,7 +115,7 @@ public class BleService extends Service{
                         if(callback != null) {
                             BluetoothDevice bd = result.getDevice();
                             try {
-                                callback.onScanResult(bd.getUuids().toString(), bd.getName());
+                                callback.onFind(bd.getAddress(), bd.getName());
                             } catch (RemoteException e) {
                                 e.printStackTrace();
                             }
@@ -116,7 +139,7 @@ public class BleService extends Service{
             @Override
             public void run() {
                 try {
-                    callback.onScanResult(null, null);
+                    callback.onFind(null, null);
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -127,13 +150,6 @@ public class BleService extends Service{
 
         isScanning = true;
         mBluetoothLeScanner.startScan(mScanCallback);
-    }
-
-    // スキャン停止
-    public void stopScan() {
-        if (mBluetoothLeScanner != null) {
-            mBluetoothLeScanner.stopScan(mScanCallback);
-        }
     }
 
     // スキャンしたデバイスのリスト保存
@@ -149,7 +165,7 @@ public class BleService extends Service{
         }
     }
 
-    public void connect(Context context, BluetoothDevice device) {
+    private void connectBle(Context context, BluetoothDevice device) {
         bluetoothGatt = device.connectGatt(context, false, mGattCallback);
         bluetoothGatt.connect();
     }
@@ -176,9 +192,20 @@ public class BleService extends Service{
                 // あとキャラクタリスティクスを取得したり探したりしてもよい
             }
         }
+
+        @Override
+        public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+            if(characteristic.getUuid().toString().toUpperCase().equals(GATTProfiles.RX.toString())){
+                try {
+                    iBleServiceCallback.onReceive(characteristic.getStringValue(0));
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     };
 
-    public boolean write(String str){
+    private boolean writeTx(String str){
         BluetoothGattService bluetoothGattService = bluetoothGatt.getService(GATTProfiles.SERVICE);
         if(bluetoothGattService == null){
             Log.e(TAG, "Can't get a BluetoothGattService");
@@ -196,7 +223,7 @@ public class BleService extends Service{
     }
 
     // サービス取得要求
-    public void discoverService() {
+    private void discoverService() {
         if (bluetoothGatt != null) {
             bluetoothGatt.discoverServices();
         }

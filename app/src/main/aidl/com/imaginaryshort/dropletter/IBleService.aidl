@@ -4,5 +4,9 @@ import com.imaginaryshort.dropletter.IBleServiceCallback;
 
 interface IBleService {
     void init();
-    void scan(IBleServiceCallback callback, long scanPeriodMs);
+    void setCallbacks(IBleServiceCallback callback);
+    void removeCallbacks();
+    void scan(long scanPeriodMs);
+    void connect(String address);
+    void write(String str);
 }

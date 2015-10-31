@@ -17,21 +17,17 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
-public class MainActivity extends Activity implements MainFragment.OnFragmentInteractionListener {
+public class MainActivity extends Activity implements DeviceListFragment.OnFragmentInteractionListener, MainFragment.OnFragmentInteractionListener {
     private Intent notificationIntent = null;
     private IBleService bleServiceInterface;
-
     private ServiceConnection bleServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             bleServiceInterface = IBleService.Stub.asInterface(service);
             try {
                 bleServiceInterface.init();
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-            try{
-                bleServiceInterface.scan(callback, 10000);
+                bleServiceInterface.setCallbacks(callback);
+                bleServiceInterface.scan(10000);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
@@ -44,12 +40,16 @@ public class MainActivity extends Activity implements MainFragment.OnFragmentInt
 
     private IBleServiceCallback callback = new IBleServiceCallback.Stub() {
         @Override
-        public void onScanResult(String uuid, String name) throws RemoteException {
-            if(uuid != null)
-            Log.d("MainActivity", "uuid = " + uuid + ", name = " + name);
+        public void onFind(String address, String name) throws RemoteException {
+            if(address != null)
+                Log.d("MainActivity", "uuid = " + address + ", name = " + name);
+        }
+
+        @Override
+        public void onReceive(String str) throws RemoteException {
+
         }
     };
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,25 +63,26 @@ public class MainActivity extends Activity implements MainFragment.OnFragmentInt
         notificationIntentFilter.addAction("NOTIFICATION_ACTION");
         registerReceiver(notificationReceiver, notificationIntentFilter);
 
-        if (savedInstanceState == null) {
-            MainFragment mainFragment = new MainFragment();
-            FragmentTransaction transaction = getFragmentManager().beginTransaction();
-            transaction.add(R.id.container, mainFragment).commit();
-        }
-
-        Intent intent = new Intent(this, BleService.class);
-        bindService(intent, bleServiceConnection, BIND_AUTO_CREATE);
-
+        DeviceListFragment deviceListFragment = new DeviceListFragment();
+        FragmentTransaction transaction = getFragmentManager().beginTransaction();
+        transaction.add(R.id.container, deviceListFragment).commit();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        Intent intent = new Intent(this, BleService.class);
+        bindService(intent, bleServiceConnection, BIND_AUTO_CREATE);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        try {
+            bleServiceInterface.removeCallbacks();
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
         unbindService(bleServiceConnection);
         //NotificationServiceの終了
         stopService(notificationIntent);
@@ -116,6 +117,13 @@ public class MainActivity extends Activity implements MainFragment.OnFragmentInt
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void next() {
+        MainFragment mainFragment = new MainFragment();
+        FragmentTransaction transaction = getFragmentManager().beginTransaction();
+        transaction.replace(R.id.container, mainFragment).commit();
     }
 
     @Override

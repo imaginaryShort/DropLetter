@@ -1,5 +1,6 @@
 package com.imaginaryshort.dropletter;
 
 interface IBleServiceCallback {
-    void onScanResult(in String uuid, in String name);
+    void onFind(in String address, in String name);
+    void onReceive(in String str);
 }
