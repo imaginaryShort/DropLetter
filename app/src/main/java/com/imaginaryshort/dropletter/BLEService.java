@@ -17,16 +17,16 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.RemoteException;
 import android.util.Log;
 import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class BLEService extends Service{
+public class BleService extends Service{
     private final static String TAG = "BLEDevice";
 
-    private static final long SCAN_PERIOD = 10000;
     private BluetoothManager bluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothLeScanner mBluetoothLeScanner;
@@ -38,42 +38,48 @@ public class BLEService extends Service{
     private Boolean isScanning;
 
 
+    private IBleService.Stub bleServiceInterface = new IBleService.Stub() {
+        @Override
+        public void init() throws RemoteException {
+            initBle();
+        }
+
+        @Override
+        public void scan(IBleServiceCallback callback, long scanPeriodMs) throws RemoteException {
+            startScan(callback, scanPeriodMs);
+        }
+    };
+
     @Override
     public void onCreate() {
         super.onCreate();
-        init();
-    }
-
-    private void init() {
-        //Check the device supports BLE
-        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
-            Toast.makeText(getApplicationContext(), "Your device does not supports Bluetooth Low Energy", Toast.LENGTH_LONG).show();
-            stopSelf();
-        }
-
-        bluetoothManager = (BluetoothManager) this.getSystemService(Context.BLUETOOTH_SERVICE);
-        if(bluetoothManager == null){
-            Toast.makeText(getApplicationContext(), "Unable to initialize BluetoothManager.", Toast.LENGTH_LONG).show();
-            stopSelf();
-        }
-        mBluetoothAdapter = bluetoothManager.getAdapter();
-        if (mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()) {
-            Toast.makeText(getApplicationContext(), "Unable to initialize BluetoothAdapter.", Toast.LENGTH_LONG).show();
-            stopSelf();
-        }
-        mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
-        if (mBluetoothLeScanner == null) {
-            Toast.makeText(getApplicationContext(), "Unable to initialize BluetoothLeScanner.", Toast.LENGTH_LONG).show();
-            stopSelf();
-        }
     }
 
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
+        return bleServiceInterface;
     }
 
-    public void startScan() {
+    private void initBle() {
+        //Check the device supports BLE
+        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
+            Toast.makeText(getApplicationContext(), "Your device does not supports Bluetooth Low Energy", Toast.LENGTH_LONG).show();
+        }
+        bluetoothManager = (BluetoothManager) this.getSystemService(Context.BLUETOOTH_SERVICE);
+        if(bluetoothManager == null){
+            Toast.makeText(getApplicationContext(), "Unable to initialize BluetoothManager.", Toast.LENGTH_LONG).show();
+        }
+        mBluetoothAdapter = bluetoothManager.getAdapter();
+        if (mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()) {
+            Toast.makeText(getApplicationContext(), "Unable to initialize BluetoothAdapter.", Toast.LENGTH_LONG).show();
+        }
+        mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
+        if (mBluetoothLeScanner == null) {
+            Toast.makeText(getApplicationContext(), "Unable to initialize BluetoothLeScanner.", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    public void startScan(final IBleServiceCallback callback, final long scanPeriod) {
         mScanCallback = new ScanCallback() {
             @Override
             public void onScanResult(int callbackType, ScanResult result) {
@@ -83,7 +89,14 @@ public class BLEService extends Service{
                         // No add
                     } else {
                         saveDevice(result.getDevice());
-                        //mCallback.onScanSuccess(result);
+                        if(callback != null) {
+                            BluetoothDevice bd = result.getDevice();
+                            try {
+                                callback.onScanResult(bd.getUuids().toString(), bd.getName());
+                            } catch (RemoteException e) {
+                                e.printStackTrace();
+                            }
+                        }
                     }
                 }
             }
@@ -102,15 +115,18 @@ public class BLEService extends Service{
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
+                try {
+                    callback.onScanResult(null, null);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
                 isScanning = false;
                 mBluetoothLeScanner.stopScan(mScanCallback);
             }
-        }, SCAN_PERIOD);
+        }, scanPeriod);
 
         isScanning = true;
         mBluetoothLeScanner.startScan(mScanCallback);
-        //TODO:we can use scanFilter
-        // mBluetoothLeScanner.startScan(filters, settings, mScanCallback);
     }
 
     // スキャン停止
