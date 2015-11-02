@@ -21,9 +21,7 @@ We can get notification like a drop of water.
    <tr><th>DropLetter</th><td></td><td></td><td></td><td></td></tr>
    <tr><th></th><td>Vibration</td><td>int</td><td>0-255</td><td></td></tr>
    <tr><th></th><td>Weight</td><td>int</td><td>0-255</td><td></td></tr>
-   <tr><th></th><td>ColorR</td><td>int</td><td>0-255</td><td></td></tr>
-   <tr><th></th><td>ColorG</td><td>int</td><td>0-255</td><td></td></tr>
-   <tr><th></th><td>ColorB</td><td>int</td><td>0-255</td><td></td></tr>
+   <tr><th></th><td>LED</td><td>int</td><td>0-255</td><td></td></tr>
   </table>
 
 ## Software
