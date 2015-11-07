@@ -34,6 +34,17 @@ We can get notification like a drop of water.
 * NotificationService
   - This service handling notification which comes from other applications.
 
+#### SQL Schema
+Database name: DropLetter
+
+<table>
+   <tr><th>Informant</th><th></th><th></th></tr>
+   <tr><td>Id</td><td>Integer</td><td>Autoincrement</td></tr>
+   <tr><td>PackageName</td><td>varchar(1014)</td><td></td></tr>
+   <tr><td>Count</td><td>Interger</td><td></td></tr>
+   <tr><td>Importance</td><td>Integer</td><td></td></tr>
+</table>
+
 ### Requirement
 * Android 5.0 Lollipop (or higher)
 * Bluetooth Low Energy

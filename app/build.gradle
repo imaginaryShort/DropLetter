@@ -21,4 +21,6 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
+    // mockito
+    androidTestCompile 'org.mockito:mockito-all:1.10.19'
 }
