@@ -2,11 +2,8 @@ package com.imaginaryshort.dropletter;
 
 import android.app.Activity;
 import android.app.FragmentTransaction;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.net.Uri;
 import android.os.Bundle;
@@ -14,11 +11,32 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
 import android.view.Menu;
-import android.view.MenuItem;
-import android.widget.Toast;
 
-public class MainActivity extends Activity implements DeviceListFragment.OnFragmentInteractionListener, MainFragment.OnFragmentInteractionListener {
-    private Intent notificationIntent = null;
+public class MainActivity extends Activity implements MainFragment.OnFragmentInteractionListener,
+        DeviceListFragment.OnFragmentInteractionListener {
+
+    private INotificationService notificationServiceInterface;
+    private ServiceConnection notificationConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            notificationServiceInterface = INotificationService.Stub.asInterface(service);
+            try {
+                notificationServiceInterface.setCallbacks(notificationCallback);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            try {
+                notificationServiceInterface.removeCallbacks();
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+    };
+
     private IBleService bleServiceInterface;
     private ServiceConnection bleServiceConnection = new ServiceConnection() {
         @Override
@@ -51,17 +69,22 @@ public class MainActivity extends Activity implements DeviceListFragment.OnFragm
         }
     };
 
+    private INotificationServiceCallback notificationCallback = new INotificationServiceCallback.Stub() {
+        @Override
+        public void onNotify(String str) throws RemoteException {
+            Log.d("Notification", str);
+        }
+
+        @Override
+        public void onNotificationRemoved(String str) throws RemoteException {
+            Log.d("Notification", str);
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        //NotificationServiceの起動
-        notificationIntent = new Intent(this, NotificationService.class);
-        startService(notificationIntent);
-        IntentFilter notificationIntentFilter = new IntentFilter();
-        notificationIntentFilter.addAction("NOTIFICATION_ACTION");
-        registerReceiver(notificationReceiver, notificationIntentFilter);
 
         DeviceListFragment deviceListFragment = new DeviceListFragment();
         FragmentTransaction transaction = getFragmentManager().beginTransaction();
@@ -73,47 +96,36 @@ public class MainActivity extends Activity implements DeviceListFragment.OnFragm
     @Override
     protected void onResume() {
         super.onResume();
-        Intent intent = new Intent(this, BleService.class);
-        bindService(intent, bleServiceConnection, BIND_AUTO_CREATE);
+        Intent b = new Intent(this, BleService.class);
+        bindService(b, bleServiceConnection, BIND_AUTO_CREATE);
+
+        Intent n = new Intent(this, NotificationService.class);
+        bindService(n, notificationConnection, BIND_AUTO_CREATE);
     }
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
         try {
             bleServiceInterface.removeCallbacks();
         } catch (RemoteException e) {
             e.printStackTrace();
         }
         unbindService(bleServiceConnection);
-        //NotificationServiceの終了
-        stopService(notificationIntent);
-    }
 
-    public BroadcastReceiver notificationReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Bundle bundle = intent.getExtras();
-            String message = bundle.getString("notification");
-            Toast.makeText(context, "onReceive! " + message, Toast.LENGTH_LONG).show();
+        try {
+            notificationServiceInterface.removeCallbacks();
+        } catch (RemoteException e) {
+            e.printStackTrace();
         }
-    };
+        unbindService(notificationConnection);
+        super.onDestroy();
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        return super.onOptionsItemSelected(item);
     }
 
     @Override

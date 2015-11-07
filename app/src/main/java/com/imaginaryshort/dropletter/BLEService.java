@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BleService extends Service{
+
     private final static String TAG = "BLEDevice";
     private BluetoothManager bluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
