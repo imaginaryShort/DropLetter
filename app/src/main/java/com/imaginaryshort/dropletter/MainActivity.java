@@ -30,6 +30,7 @@ public class MainActivity extends Activity implements MainFragment.OnFragmentInt
     private IBleService bleServiceInterface;
     private NotificationBroadcastReceiver receiver;
     private IntentFilter filter;
+    private boolean restart = false;
 
     private ServiceConnection bleServiceConnection = new ServiceConnection() {
         @Override
@@ -127,6 +128,20 @@ public class MainActivity extends Activity implements MainFragment.OnFragmentInt
 
         Intent n = new Intent(this, NotificationService.class);
         registerReceiver(receiver, filter);
+
+        if(restart) {
+            try {
+                bleServiceInterface.write("action:PUSHED");
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        restart = true;
     }
 
     @Override
@@ -176,18 +191,17 @@ public class MainActivity extends Activity implements MainFragment.OnFragmentInt
     @Override
     public void notify_button() {
         Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
+        handler.post(new Runnable() {
             @Override
             public void run() {
                 Notification.Builder builder = new Notification.Builder(getApplicationContext());
-                builder.setTicker("ticker");
-                builder.setContentTitle("title");
-                builder.setContentText("text");
+                builder.setContentTitle("DropLetter");
+                builder.setContentText("Notification ");
                 builder.setSmallIcon(android.R.drawable.ic_dialog_info);
                 Notification notification = builder.build();
                 NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
                 manager.notify(0, notification);
             }
-        }, 5000);
+        });
     }
 }
