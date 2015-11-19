@@ -7,9 +7,8 @@ We can get notification like a drop of water.
 
 ## Hardware
 * RedBearLab BLE Nano
-* Moment control system
 * Vibration motor
-* Full color LED
+* Notification LED
 
 ### Data Structure
 #### GATT Profiles
@@ -18,10 +17,6 @@ We can get notification like a drop of water.
    <tr><th>Default</th><td></td><td></td><td></td><td>6E400001-B5A3-F393-E0A9-E50E24DCCA9E</td></tr>
    <tr><th></th><td>TX</td><td>String</td><td></td><td>6E400002-B5A3-F393-E0A9-E50E24DCCA9E </td></tr>
    <tr><th></th><td>RX</td><td>String</td><td></td><td>6E400003-B5A3-F393-E0A9-E50E24DCCA9E </td></tr>
-   <tr><th>DropLetter</th><td></td><td></td><td></td><td></td></tr>
-   <tr><th></th><td>Vibration</td><td>int</td><td>0-255</td><td></td></tr>
-   <tr><th></th><td>Weight</td><td>int</td><td>0-255</td><td></td></tr>
-   <tr><th></th><td>LED</td><td>int</td><td>0-255</td><td></td></tr>
   </table>
 
 ## Software
@@ -42,6 +37,7 @@ Database name: DropLetter
    <tr><td>Id</td><td>Integer</td><td>Autoincrement</td></tr>
    <tr><td>PackageName</td><td>varchar(1014)</td><td></td></tr>
    <tr><td>Count</td><td>Interger</td><td></td></tr>
+   <tr><td>LastNotified</td><td>DateTime</td><td></td></tr>
    <tr><td>Importance</td><td>Integer</td><td></td></tr>
 </table>
 

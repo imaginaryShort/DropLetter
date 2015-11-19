@@ -5,16 +5,21 @@ import android.app.FragmentTransaction;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
 import android.view.Menu;
+import android.widget.Toast;
+
+import com.imaginaryshort.dropletter.fragment.DeviceListFragment;
+import com.imaginaryshort.dropletter.fragment.MainFragment;
+import com.imaginaryshort.dropletter.service.BleService;
+import com.imaginaryshort.dropletter.service.NotificationService;
 
 public class MainActivity extends Activity implements MainFragment.OnFragmentInteractionListener,
         DeviceListFragment.OnFragmentInteractionListener {
-
+    private DeviceListFragment deviceListFragment;
     private INotificationService notificationServiceInterface;
     private ServiceConnection notificationConnection = new ServiceConnection() {
         @Override
@@ -43,8 +48,8 @@ public class MainActivity extends Activity implements MainFragment.OnFragmentInt
         public void onServiceConnected(ComponentName name, IBinder service) {
             bleServiceInterface = IBleService.Stub.asInterface(service);
             try {
-                bleServiceInterface.init();
                 bleServiceInterface.setCallbacks(callback);
+                bleServiceInterface.init();
                 bleServiceInterface.scan(10000);
             } catch (RemoteException e) {
                 e.printStackTrace();
@@ -60,7 +65,7 @@ public class MainActivity extends Activity implements MainFragment.OnFragmentInt
         @Override
         public void onFind(String address, String name) throws RemoteException {
             if(address != null)
-                Log.d("MainActivity", "uuid = " + address + ", name = " + name);
+                deviceListFragment.addDevice(address, name);
         }
 
         @Override
@@ -73,11 +78,17 @@ public class MainActivity extends Activity implements MainFragment.OnFragmentInt
         @Override
         public void onNotify(String str) throws RemoteException {
             Log.d("Notification", str);
+            Toast.makeText(getApplicationContext(), str, Toast.LENGTH_LONG);
         }
 
         @Override
         public void onNotificationRemoved(String str) throws RemoteException {
             Log.d("Notification", str);
+        }
+
+        @Override
+        public void checknotify() throws RemoteException {
+
         }
     };
 
@@ -86,7 +97,7 @@ public class MainActivity extends Activity implements MainFragment.OnFragmentInt
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        DeviceListFragment deviceListFragment = new DeviceListFragment();
+        deviceListFragment = new DeviceListFragment();
         FragmentTransaction transaction = getFragmentManager().beginTransaction();
         transaction.add(R.id.container, deviceListFragment);
         transaction.addToBackStack(null);
@@ -136,7 +147,20 @@ public class MainActivity extends Activity implements MainFragment.OnFragmentInt
     }
 
     @Override
-    public void onFragmentInteraction(Uri uri) {
+    public void connect(String address) {
+        try {
+            bleServiceInterface.connect(address);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
 
+    @Override
+    public void write(String str) {
+        try {
+            bleServiceInterface.write(str);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 }
