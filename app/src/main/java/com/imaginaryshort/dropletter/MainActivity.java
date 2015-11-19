@@ -2,13 +2,15 @@ package com.imaginaryshort.dropletter;
 
 import android.app.Activity;
 import android.app.FragmentTransaction;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
-import android.util.Log;
 import android.view.Menu;
 import android.widget.Toast;
 
@@ -20,29 +22,10 @@ import com.imaginaryshort.dropletter.service.NotificationService;
 public class MainActivity extends Activity implements MainFragment.OnFragmentInteractionListener,
         DeviceListFragment.OnFragmentInteractionListener {
     private DeviceListFragment deviceListFragment;
-    private INotificationService notificationServiceInterface;
-    private ServiceConnection notificationConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            notificationServiceInterface = INotificationService.Stub.asInterface(service);
-            try {
-                notificationServiceInterface.setCallbacks(notificationCallback);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            try {
-                notificationServiceInterface.removeCallbacks();
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-        }
-    };
-
     private IBleService bleServiceInterface;
+    private NotificationBroadcastReceiver receiver;
+    private IntentFilter filter;
+
     private ServiceConnection bleServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -74,23 +57,21 @@ public class MainActivity extends Activity implements MainFragment.OnFragmentInt
         }
     };
 
-    private INotificationServiceCallback notificationCallback = new INotificationServiceCallback.Stub() {
+    public class NotificationBroadcastReceiver extends BroadcastReceiver {
         @Override
-        public void onNotify(String str) throws RemoteException {
-            Log.d("Notification", str);
-            Toast.makeText(getApplicationContext(), str, Toast.LENGTH_LONG);
+        public void onReceive(Context context, Intent intent) {
+            Bundle bundle = intent.getExtras();
+            String packageName = bundle.getString("PackageName");
+            String text = bundle.getString("Text");
+            int value = text.length() < 255 ? text.length() : 255;
+            Toast.makeText(context, packageName + ", " + text, Toast.LENGTH_LONG).show();
+            try {
+                bleServiceInterface.write("value:" + value) ;
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         }
-
-        @Override
-        public void onNotificationRemoved(String str) throws RemoteException {
-            Log.d("Notification", str);
-        }
-
-        @Override
-        public void checknotify() throws RemoteException {
-
-        }
-    };
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,6 +83,8 @@ public class MainActivity extends Activity implements MainFragment.OnFragmentInt
         transaction.add(R.id.container, deviceListFragment);
         transaction.addToBackStack(null);
         transaction.commit();
+        receiver = new NotificationBroadcastReceiver();
+        filter = new IntentFilter("com.imaginaryshort.onNotificationPosted");
     }
 
     @Override
@@ -111,7 +94,7 @@ public class MainActivity extends Activity implements MainFragment.OnFragmentInt
         bindService(b, bleServiceConnection, BIND_AUTO_CREATE);
 
         Intent n = new Intent(this, NotificationService.class);
-        bindService(n, notificationConnection, BIND_AUTO_CREATE);
+        registerReceiver(receiver, filter);
     }
 
     @Override
@@ -122,13 +105,7 @@ public class MainActivity extends Activity implements MainFragment.OnFragmentInt
             e.printStackTrace();
         }
         unbindService(bleServiceConnection);
-
-        try {
-            notificationServiceInterface.removeCallbacks();
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
-        unbindService(notificationConnection);
+        unregisterReceiver(receiver);
         super.onDestroy();
     }
 
