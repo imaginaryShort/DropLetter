@@ -34,11 +34,11 @@ Database name: DropLetter
 
 <table>
    <tr><th>Informant</th><th></th><th></th></tr>
-   <tr><td>Id</td><td>Integer</td><td>Autoincrement</td></tr>
-   <tr><td>PackageName</td><td>varchar(1014)</td><td></td></tr>
-   <tr><td>Count</td><td>Interger</td><td></td></tr>
-   <tr><td>LastNotified</td><td>DateTime</td><td></td></tr>
-   <tr><td>Importance</td><td>Integer</td><td></td></tr>
+   <tr><td>id</td><td>integer</td><td>Autoincrement</td></tr>
+   <tr><td>package_name</td><td>text</td><td></td></tr>
+   <tr><td>count</td><td>interger</td><td></td></tr>
+   <tr><td>last_notified</td><td>integer(unixtime)</td><td></td></tr>
+   <tr><td>importance</td><td>integer</td><td></td></tr>
 </table>
 
 ### Requirement

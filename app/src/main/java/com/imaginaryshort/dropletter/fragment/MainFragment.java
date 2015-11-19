@@ -31,6 +31,14 @@ public class MainFragment extends Fragment {
                 mListener.write("Hello");
             }
         });
+
+        Button button = (Button)v.findViewById(R.id.notify_button);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mListener.notify_button();
+            }
+        });
         return v;
     }
 
@@ -53,5 +61,6 @@ public class MainFragment extends Fragment {
 
     public interface OnFragmentInteractionListener {
         void write(String str);
+        void notify_button();
     }
 }
