@@ -5,60 +5,10 @@
     android:layout_height="match_parent"
     tools:context="com.imaginaryshort.dropletter.fragment.MainFragment">
 
-    <Switch
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Enable notification"
-        android:id="@+id/switch1" />
-
-    <Switch
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Enable weight"
-        android:id="@+id/switch2" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Color R"
-        android:id="@+id/labelR" />
-
-    <SeekBar
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/seekBarR"
-        android:layout_gravity="center_horizontal"
-        android:longClickable="false"
-        android:max="255" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Color G"
-        android:id="@+id/labelG" />
-
-    <SeekBar
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/seekBarG"
-        android:max="255" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Color B"
-        android:id="@+id/labelB" />
-
-    <SeekBar
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/seekBarB"
-        android:max="255" />
-
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="New Button"
+        android:text="Send Hello"
         android:id="@+id/testbutton" />
 
     <Button
