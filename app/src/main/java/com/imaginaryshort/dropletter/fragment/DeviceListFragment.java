@@ -38,6 +38,7 @@ public class DeviceListFragment extends Fragment {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()){
             case R.id.action_refresh:
+                mListener.refresh();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -99,5 +100,6 @@ public class DeviceListFragment extends Fragment {
     public interface OnFragmentInteractionListener {
         void next();
         void connect(String address);
+        void refresh();
     }
 }

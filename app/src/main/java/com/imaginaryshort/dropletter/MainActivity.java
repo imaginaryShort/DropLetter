@@ -10,8 +10,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -77,32 +75,6 @@ public class MainActivity extends Activity implements MainFragment.OnFragmentInt
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
-        }
-    }
-
-    private class SQLiteHelper extends SQLiteOpenHelper {
-        static final String DB = "dropletter.db";
-        static final int DB_VERSION = 1;
-        static final String CREATE_TABLE = "create table informant (" +
-                "id integer primary key autoincrement," +
-                "package_name text not null," +
-                "count integer not null," +
-                "last_notified integer not null," +
-                "importance integer not null," +
-                ");";
-        static final String DROP_TABLE = "drop table informant;";
-
-        public SQLiteHelper(Context c) {
-            super(c, DB, null, DB_VERSION);
-        }
-
-        public void onCreate(SQLiteDatabase db) {
-            db.execSQL(CREATE_TABLE);
-        }
-
-        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            db.execSQL(DROP_TABLE);
-            onCreate(db);
         }
     }
 
@@ -174,6 +146,15 @@ public class MainActivity extends Activity implements MainFragment.OnFragmentInt
     public void connect(String address) {
         try {
             bleServiceInterface.connect(address);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void refresh() {
+        try {
+            bleServiceInterface.scan(10000);
         } catch (RemoteException e) {
             e.printStackTrace();
         }

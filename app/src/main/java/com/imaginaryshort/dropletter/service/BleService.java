@@ -130,12 +130,10 @@ public class BleService extends Service{
                     }
                 }
             }
-
             @Override
             public void onBatchScanResults(List<ScanResult> results) {
                 super.onBatchScanResults(results);
             }
-
             @Override
             public void onScanFailed(int errorCode) {
                 super.onScanFailed(errorCode);
